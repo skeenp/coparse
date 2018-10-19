@@ -1,6 +1,8 @@
 # coparse
 Coordinate parser for use in Node JS which parses coordinates in DD. DM, DMS and UTM coordinates, returning a standardised DD json object.
 
+Intended to initially be used in Google Cloud Functions.
+
 ## Use
 Append ?q={coordinate} to your node URL, and the query string will be parsed and a standard json object will be returned.
 
