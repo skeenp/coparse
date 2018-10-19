@@ -42,11 +42,8 @@ exports.main = (req, res) => {
             responce.result.records.push(pt);
         }
     }
-    // Provide Responce
-    context.res = {
-        // Stringify responce
-        body: JSON.stringify(responce)
-    }
+    //Respond
+    res.status(200).send(JSON.stringify(responce));
 }
 /**
  * Convers a DD coordinate into a DD object
