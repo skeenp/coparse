@@ -1,8 +1,11 @@
 /**
- * Convers a DD, DM, DMS or UTM coordinate into a standardised DD json object
- *  
+ * Responds to a http request for a conversion of a DD, DM, DMS
+ * or UTM coordinate into a standardised DD json object.
+*
+ * @param {!express:Request} req HTTP request context.
+ * @param {!express:Response} res HTTP response context.
  */
-module.exports = async function (context, req) {
+exports.main = (req, res) => {
     //Setup responce
     responce = {
         "success": false,
