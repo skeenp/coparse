@@ -1,0 +1,79 @@
+{
+    "result": {
+        "lat": -41.80506,
+        "lng": 146.03858
+    },
+    "tests": [{
+        "name": "UTM 1",
+        "query": "S55 420135E 5371420N",
+        "method":"UTM"
+    }, {
+        "name": "UTM 2",
+        "query": "55G E420135 N5371420",
+        "method":"UTM"
+    }, {
+        "name": "DMS 1",
+        "query": "-41° 48' 18.2226\" 146° 2' 18.9168\"",
+        "method":"DMS"
+    }, {
+        "name": "DMS 2",
+        "query": "S41° 48' 18.2226\" E146° 2' 18.9168\"",
+        "method":"DMS"
+    }, {
+        "name": "DMS 3",
+        "query": "41° 48' 18.2226\"S E146° 2' 18.9168\"E",
+        "method":"DMS"
+    }, {
+        "name": "DMS 4",
+        "query": "-41 48 18.2226 146 2 18.9168",
+        "method":"DMS"
+    }, {
+        "name": "DMS 5",
+        "query": "S41 48 18.2226 E146 2 18.9168",
+        "method":"DMS"
+    }, {
+        "name": "DMS 6",
+        "query": "41 48 18.2226S 146 2 18.9168E",
+        "method":"DMS"
+    }, {
+        "name": "DM 1",
+        "query": "-41° 48.3037' 146° 2.3153'",
+        "method":"DM"
+    }, {
+        "name": "DM 2",
+        "query": "S41° 48.3037' E146° 2.3153'",
+        "method":"DM"
+    }, {
+        "name": "DM 3",
+        "query": "41° 48.3037'S 146° 2.3153'E",
+        "method":"DM"
+    }, {
+        "name": "DM 4",
+        "query": "-41° 48.3037' 146° 2.3153'",
+        "method":"DM"
+    }, {
+        "name": "DM 5",
+        "query": "-41 48.3037 146 2.3153",
+        "method":"DM"
+    }, {
+        "name": "DM 6",
+        "query": "41 48.3037S 146 2.3153E",
+        "method":"DM"
+    }, {
+        "name": "DD 1",
+        "query": "-41.805062 146.038588",
+        "method":"DD"
+    }, {
+        "name": "DD 2",
+        "query": "S41.805062 E146.038588",
+        "method":"DD"
+    }, {
+        "name": "DD 3",
+        "query": "41.805062S 146.038588E",
+        "method":"DD"
+    }, {
+        "name": "Test Fail 1",
+        "query": "41.805062S 146.038588E sssd 23223 3323 2 323 23 2 323 23 2 32 32 32 3",
+        "method":"UTM"
+    }]
+}
