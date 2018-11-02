@@ -98,8 +98,8 @@ function fromDD(parts) {
     var y = parseFloat(parts[0][2])
     var x = parseFloat(parts[1][2])
     //Parse hemispheres
-    if (parts[0][1] == 's' || parts[0][3] == 's' ) y *= -1;
-    if (parts[1][1] == 'w' || parts[1][3] == 'w' ) x *= -1;
+    if (parts[0][1] == 's' || parts[0][3] == 's' || parts[0][1] == '-') y *= -1;
+    if (parts[1][1] == 'w' || parts[1][3] == 'w' || parts[1][1] == '-') x *= -1;
     //Validate results
     if (y >= 90 || y <= -90) {
         return {
@@ -131,8 +131,8 @@ function fromDM(parts) {
     var dx = parseFloat(parts[2][2])
     var mx = parseFloat(parts[3][2])
     //Parse hemispheres
-    if (parts[0][1] == 's' || parts[0][3] == 's' || parts[1][3] == 's' ) dy *= -1;
-    if (parts[2][1] == 'w' || parts[2][3] == 'w' || parts[3][3] == 'w') dx *= -1;
+    if (parts[0][1] == 's' || parts[0][3] == 's' || parts[1][3] == 's'  || parts[0][1] == '-') dy *= -1;
+    if (parts[2][1] == 'w' || parts[2][3] == 'w' || parts[3][3] == 'w' || parts[2][1] == '-') dx *= -1;
     //Validate results
     if (y >= 90 || y <= -90) {
         return {
@@ -180,8 +180,8 @@ function fromDMS(parts) {
     var mx = parseFloat(parts[4][2])
     var sx = parseFloat(parts[5][2])
         //Parse hemispheres
-        if (parts[0][1] == 's' || parts[0][3] == 's' || parts[2][3] == 's') dy *= -1;
-        if (parts[3][1] == 'w' || parts[3][3] == 'w' || parts[5][3] == 'w') dx *= -1;
+        if (parts[0][1] == 's' || parts[0][3] == 's' || parts[2][3] == 's' || parts[0][1] == '-') dy *= -1;
+        if (parts[3][1] == 'w' || parts[3][3] == 'w' || parts[5][3] == 'w' || parts[3][1] == '-') dx *= -1;
     //Validate results
     if (y >= 90 || y <= -90) {
         return {
