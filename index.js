@@ -69,7 +69,7 @@ exports.main = (req, res) => {
             responce.error = pt.error
         }else{
             //Setup display value
-            pt.display = pt.y + " " + pt.x
+            pt.display = query
             delete pt.error
             //Update responce
             responce.success = true
