@@ -19,8 +19,8 @@ exports.main = (req, res) => {
   var ckanapi = req.query.t == "ckanapi";
   // Check if query has been passed
   if (req.query.q) {
-    //Get query string and convert w and s to minus
-    query = req.query.q.toLowerCase().replace(/[^\-a-z0-9\.\ ]+/g, "");
+    //Get query string and strip unneccessary chars
+    query = req.query.q.toLowerCase().replace(/[^\-a-z0-9\.\ \,\;]+/g, "");
     //Get coordinate parts
     var re = /([\-a-z]?)(\d+\.?\d*)([a-z]?)/g;
     var m;
@@ -40,7 +40,7 @@ exports.main = (req, res) => {
     //Return query data in debug mode
     if (debug) {
       responce.query = {
-        query: req.query.q,
+        string: req.query.q,
         parsed: query,
         parts: parts
       };
@@ -104,32 +104,32 @@ exports.main = (req, res) => {
  */
 function fromDD(parts) {
   //Parse parts
-  var y = parseFloat(parts[0][2]);
-  var x = parseFloat(parts[1][2]);
+  var lng = parseFloat(parts[0][2]);
+  var lat = parseFloat(parts[1][2]);
   //Parse hemispheres
-  if (parts[0][1] == "s" || parts[0][3] == "s" || parts[0][1] == "-") y *= -1;
-  if (parts[1][1] == "w" || parts[1][3] == "w" || parts[1][1] == "-") x *= -1;
+  if (parts[0][1] == "w" || parts[0][3] == "w" || parts[0][1] == "-") lng *= -1;
+  if (parts[1][1] == "s" || parts[1][3] == "s" || parts[1][1] == "-") lat *= -1;
   //Validate results
-  if (y >= 90 || y <= -90) {
+  if (lat >= 90 || lat <= -90) {
     return {
       error:
         "Latitude degrees out of bounds [Expected:-90,90 Value: " +
-        String(y) +
+        String(lat) +
         "]"
     };
   }
-  if (x >= 180 || x <= -180) {
+  if (lng >= 180 || lng <= -180) {
     return {
       error:
         "Longitude degrees out of bounds [Expected:-180,180 Value: " +
-        String(x) +
+        String(lng) +
         "]"
     };
   }
   //Return coords
   return {
-    y: y,
-    x: x,
+    y: lat,
+    x: lng,
     error: null
   };
 }
@@ -141,27 +141,27 @@ function fromDD(parts) {
  */
 function fromDM(parts) {
   //Parse parts
-  var dy = parseFloat(parts[0][2]);
-  var my = parseFloat(parts[1][2]);
-  var dx = parseFloat(parts[2][2]);
-  var mx = parseFloat(parts[3][2]);
+  var dlng = parseFloat(parts[0][2]);
+  var mlng = parseFloat(parts[1][2]);
+  var dlat = parseFloat(parts[2][2]);
+  var mlat = parseFloat(parts[3][2]);
   //Parse hemispheres
   if (
-    parts[0][1] == "s" ||
-    parts[0][3] == "s" ||
-    parts[1][3] == "s" ||
+    parts[0][1] == "w" ||
+    parts[0][3] == "w" ||
+    parts[1][3] == "w" ||
     parts[0][1] == "-"
   )
-    dy *= -1;
+    dlng *= -1;
   if (
-    parts[2][1] == "w" ||
-    parts[2][3] == "w" ||
-    parts[3][3] == "w" ||
+    parts[2][1] == "s" ||
+    parts[2][3] == "s" ||
+    parts[3][3] == "s" ||
     parts[2][1] == "-"
   )
-    dx *= -1;
+    dlat *= -1;
   //Validate results
-  if (y >= 90 || y <= -90) {
+  if (dlat >= 90 || dlat <= -90) {
     return {
       error:
         "Latitude degrees out of bounds [Expected:-90,90 Value: " +
@@ -169,7 +169,7 @@ function fromDM(parts) {
         "]"
     };
   }
-  if (x >= 180 || x <= -180) {
+  if (dlng >= 180 || dlng <= -180) {
     return {
       error:
         "Longitude degrees out of bounds [Expected:-180,180 Value: " +
@@ -177,29 +177,29 @@ function fromDM(parts) {
         "]"
     };
   }
-  if (my < 0 || my >= 60) {
+  if (mlat < 0 || mlat >= 60) {
     return {
       error:
         "Latitude minutes out of bounds [Expected:0,60 Value: " +
-        String(my) +
+        String(mlat) +
         "]"
     };
   }
-  if (mx < 0 || mx >= 60) {
+  if (mlng < 0 || mlng >= 60) {
     return {
       error:
         "Longitude minutes out of bounds [Expected:0,60 Value: " +
-        String(mx) +
+        String(mlng) +
         "]"
     };
   }
   //Calculate coords
-  var y = dy + (Math.sign(dy) * my) / 60;
-  var x = dx + (Math.sign(dx) * mx) / 60;
+  var lng = dlng + (Math.sign(dlng) * mlng) / 60;
+  var lat = dlat + (Math.sign(dlat) * mlat) / 60;
   //Return coords
   return {
-    y: y,
-    x: x,
+    y: lat,
+    x: lng,
     error: null
   };
 }
@@ -212,83 +212,83 @@ function fromDM(parts) {
  */
 function fromDMS(parts) {
   //Parse parts
-  var dy = parseFloat(parts[0][2]);
-  var my = parseFloat(parts[1][2]);
-  var sy = parseFloat(parts[2][2]);
-  var dx = parseFloat(parts[3][2]);
-  var mx = parseFloat(parts[4][2]);
-  var sx = parseFloat(parts[5][2]);
+  var dlng = parseFloat(parts[0][2]);
+  var mlng = parseFloat(parts[1][2]);
+  var slng = parseFloat(parts[2][2]);
+  var dlat = parseFloat(parts[3][2]);
+  var mlat = parseFloat(parts[4][2]);
+  var slat = parseFloat(parts[5][2]);
   //Parse hemispheres
   if (
-    parts[0][1] == "s" ||
-    parts[0][3] == "s" ||
-    parts[2][3] == "s" ||
+    parts[0][1] == "w" ||
+    parts[0][3] == "w" ||
+    parts[2][3] == "w" ||
     parts[0][1] == "-"
   )
-    dy *= -1;
+    dlng *= -1;
   if (
-    parts[3][1] == "w" ||
-    parts[3][3] == "w" ||
-    parts[5][3] == "w" ||
+    parts[3][1] == "s" ||
+    parts[3][3] == "s" ||
+    parts[5][3] == "s" ||
     parts[3][1] == "-"
   )
-    dx *= -1;
+    dlat *= -1;
   //Validate results
-  if (y >= 90 || y <= -90) {
+  if (dlat >= 90 || dlat <= -90) {
     return {
       error:
         "Latitude degrees out of bounds [Expected:-90,90 Value: " +
-        String(y) +
+        String(dlat) +
         "]"
     };
   }
-  if (x >= 180 || x <= -180) {
+  if (dlng >= 180 || dlng <= -180) {
     return {
       error:
         "Longitude degrees out of bounds [Expected:-180,180 Value: " +
-        String(x) +
+        String(dlng) +
         "]"
     };
   }
-  if (my <= 0 || my >= 60) {
+  if (mlng <= 0 || mlng >= 60) {
     return {
       error:
         "Latitude minutes out of bounds [Expected:0,60 Value: " +
-        String(my) +
+        String(mlng) +
         "]"
     };
   }
-  if (mx < 0 || mx >= 60) {
+  if (mlat < 0 || mlat >= 60) {
     return {
       error:
         "Longitude minutes out of bounds [Expected:0,60 Value: " +
-        String(mx) +
+        String(mlat) +
         "]"
     };
   }
-  if (sy < 0 || sy >= 60) {
+  if (slng < 0 || slng >= 60) {
     return {
       error:
         "Latitude seconds out of bounds [Expected:0,60 Value: " +
-        String(sy) +
+        String(slng) +
         "]"
     };
   }
-  if (sx < 0 || sx >= 60) {
+  if (slat < 0 || slat >= 60) {
     return {
       error:
         "Longitude seconds out of bounds [Expected:0,60 Value: " +
-        String(sx) +
+        String(slat) +
         "]"
     };
   }
   //Calculate coords
-  var y = dy + (Math.sign(dy) * my) / 60 + (Math.sign(dy) * sy) / 3600;
-  var x = dx + (Math.sign(dx) * mx) / 60 + (Math.sign(dx) * sx) / 3600;
+  var lng = dlng + (Math.sign(dlng) * mlng) / 60 + (Math.sign(dlng) * slng) / 3600;
+  var lat = dlat + (Math.sign(dlat) * mlat) / 60 + (Math.sign(dlat) * slat) / 3600;
   //Return coords
   return {
-    y: y,
-    x: x,
+    y: lat,
+    x: lng,
     error: null
   };
 }
