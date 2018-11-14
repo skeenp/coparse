@@ -50,6 +50,14 @@ The following are tested variants on a value passed as UTM:
  * S55 420135E 5371420N
  * 55S E420135 N5371420
 
+Note the zone component of the coordinate contains the zone number of its hemisphere, not zone letter as is sometimes used.
+
+#### Notes
+
+The only charactors supported to seperate coordinate groups are semi colons, comma's and spaces.
+
+All methods use WGS 84
+
 ### Debug
 Specifying d=true, a debug output will be appended to the output object.
 

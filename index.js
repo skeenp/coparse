@@ -20,7 +20,7 @@ exports.main = (req, res) => {
   // Check if query has been passed
   if (req.query.q) {
     //Get query string and strip unneccessary chars
-    query = req.query.q.toLowerCase().replace(/[^\-a-z0-9\.\ ]+/g, "");
+    query = req.query.q.toLowerCase().replace(/[^\-a-z0-9\.\ \,\;]+/g, "");
     //Get coordinate parts
     var re = /([\-a-z]?)(\d+\.?\d*)([a-z]?)/g;
     var m;
