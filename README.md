@@ -61,7 +61,7 @@ All methods use WGS 84
 ### Debug
 Specifying d=true, a debug output will be appended to the output object.
 
-## Responce
+## Response
 
 ### Successful Query
 
