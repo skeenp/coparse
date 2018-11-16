@@ -8,7 +8,7 @@ Intended to initially be used in Google Cloud Functions.
 
 ## Use
 
-Append ?q={coordinate} to your node URL, and the query string will be parsed and a standard json object will be returned. By default a simple object is returned, but a ckanapi-like object can also be returned by passing t=ckanapi. By default a simple object is returned.
+Append ?q={coordinate} to your node URL, and the query string will be parsed and a standard json object will be returned. By default a simple object is returned, but a ckanapi-like or geojson object can also be returned by passing t=ckanapi or t=geojosn respectivly. By default a simple object is returned.
 
 ### Supported Query Formats
 Queries can be passed in Degrees, Decimal Degrees, Degrees Minutes Seconds or UTM format. The following are some examples of supported query strings.
@@ -63,7 +63,9 @@ Specifying d=true, a debug output will be appended to the output object.
 
 ## Responce
 
-Successful Query (simple type)
+### Successful Query
+
+simple
 
 ```json
 {
@@ -75,7 +77,7 @@ Successful Query (simple type)
 }
 ```
 
-Successful Query (ckanapi type)
+ckanapi
 
 ```json
 {
@@ -92,14 +94,56 @@ Successful Query (ckanapi type)
 }
 ```
 
-Unsuccessful Query
+geojson
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          146.03858588257734,
+          -41.805066191556534
+        ]
+      },
+      "properties": {
+        "display": "146.0386 -41.8051"
+      }
+    }
+  ]
+}
+```
+
+### Unsuccessful Query
+
+simple
 
 ```json
 {
   "success": false,
-  "result": {
-    "records": [
-    ]
-  }
+  "error_msg": "Latitude minutes out of bounds [Expected:0,60 Value: 371420]"
+}
+```
+
+ckanapi
+
+```json
+{
+  "success": false,
+  "error": "Latitude minutes out of bounds [Expected:0,60 Value: 371420]"
+}
+```
+
+geojson
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    
+  ]
 }
 ```
