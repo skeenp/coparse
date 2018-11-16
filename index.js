@@ -111,13 +111,19 @@ exports.main = (req, res) => {
 function toCkanAPI(result, debug) {
   var _result = {}
   _result.success = result.success
-  _result.result = {
-    records: [{
-      x: result.result.x,
-      y: result.result.y,
-      display: result.display
-    }]
-  };
+  //Check for valid responce
+  if (result.success) {
+    _result.result = {
+      records: [{
+        x: result.result.x,
+        y: result.result.y,
+        display: result.display
+      }]
+    };
+  } else {
+    _result.error = result.error_msg
+  }
+  //Provide debug info
   if (debug) _result.debug = result.debug;
   return _result;
 }
@@ -151,6 +157,7 @@ function toGeojson(result, debug) {
     //Add feature
     _result.features = [feature];
   }
+  //Provide debug info
   if (debug) _result.debug = result.debug;
   return _result;
 }
