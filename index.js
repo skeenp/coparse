@@ -7,16 +7,14 @@
  * d: debug flag
  * t: responce type - simple - simple x y result (Default)
  *                  - ckanapi - ckan-like object (see https://docs.ckan.org/en/2.8/maintaining/datastore.html#ckanext.datastore.logic.action.datastore_search_sql)
+ *                  - geojson - geojson object
  * @param {!express:Response} res HTTP response context.
  */
 exports.main = (req, res) => {
-  //Setup responce
-  responce = {
-    success: false
-  };
+  //Setup result
+  var result = {};
   //Check debug status
   var debug = req.query.d == "true";
-  var ckanapi = req.query.t == "ckanapi";
   // Check if query has been passed
   if (req.query.q) {
     //Get query string and strip unneccessary chars
@@ -39,63 +37,124 @@ exports.main = (req, res) => {
     }
     //Return query data in debug mode
     if (debug) {
-      responce.query = {
-        string: req.query.q,
+      result.debug = {
+        query: req.query.q,
         parsed: query,
         parts: parts
       };
     }
     //Get coordinate point
-    var pt = {};
+    var pt = {}
+    var method = 'Unknown'
     //Guess coord type by counting parts
     if (parts.length == 2) {
       //Lat long in DD
-      if (debug) responce.method = "DD";
+      method = "DD";
       pt = fromDD(parts);
     } else if (parts.length == 3) {
       //UTM
-      if (debug) responce.method = "UTM";
+      method = "UTM";
       pt = fromUTM(parts);
     } else if (parts.length == 4) {
       //Lat long in DM
-      if (debug) responce.method = "DM";
+      method = "DM";
       pt = fromDM(parts);
     } else if (parts.length == 6) {
       //Lat long in DMS
-      if (debug) responce.method = "DMS";
+      method = "DMS";
       pt = fromDMS(parts);
     } else {
-      if (debug) responce.method = "Unknown";
-      pt.error = "Cannot determine coordinate type";
+      pt.error = true
+      pt.error_msg = "Cannot determine coordinate type";
     }
+    //Update method
+    if (debug) result.debug.method = method;
     //Check for match
     if (pt.error) {
       //Return error
-      responce.error = pt.error;
+      result.success = false;
+      result.error_msg = pt.error_msg;
     } else {
-      //Setup display value
-      pt.display = req.query.q;
-      delete pt.error;
-      //Update responce
-      responce.success = true;
-      if (!ckanapi) {
-        result = { y: pt.y, x: pt.x };
-        responce.result = result;
-      } else {
-        result = { records: [pt] };
-        responce.result = result;
-      }
+      //Setup base result
+      result.success = true;
+      result.result = {
+        y: pt.lng,
+        x: pt.lat
+      };
+      lat = Math.round(pt.lat * 10000) / 10000
+      lng = Math.round(pt.lng * 10000) / 10000
+      result.display = `${lng} ${lat}`;
     }
   } else {
-    responce.error = "No query sent";
+    result.success = false
+    result.error = "No query sent";
   }
+  //Setup cors
   res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  res.status(200).send(JSON.stringify(responce));
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  // Select output type
+  if (req.query.t == "geojson") {
+    result = toGeojson(result, debug);
+  } else if (req.query.t == "ckanapi") {
+    result = toCkanAPI(result, debug);
+  }
+  //Return rresult
+  res.status(200).json(result);
 };
+
+/**
+ * Convers a result object to a ckanapi like object
+ *
+ * @param result result object
+ * @returns result object as ckan-like object
+ */
+function toCkanAPI(result, debug) {
+  var _result = {}
+  _result.success = result.success
+  _result.result = {
+    records: [{
+      x: result.result.x,
+      y: result.result.y,
+      display: result.display
+    }]
+  };
+  if (debug) _result.debug = result.debug;
+  return _result;
+}
+
+/**
+ * Convers a result object to geojson
+ *
+ * @param result result object
+ * @returns result object as geojson
+ */
+function toGeojson(result, debug) {
+  //Setup geojson object
+  _result = {
+    type: "FeatureCollection",
+    features: []
+  };
+  //Check for valid responce
+  if (result.success) {
+    feature = {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [result.result.y, result.result.x]
+      },
+      properties: {
+        base: result.base,
+        display: result.display,
+        full: result.full
+      }
+    };
+    //Add feature
+    _result.features = [feature];
+  }
+  if (debug) _result.debug = result.debug;
+  return _result;
+}
+
 /**
  * Convers a DD coordinate into a DD object
  *
@@ -112,25 +171,25 @@ function fromDD(parts) {
   //Validate results
   if (lat >= 90 || lat <= -90) {
     return {
-      error:
-        "Latitude degrees out of bounds [Expected:-90,90 Value: " +
+      error: true,
+      error_msg: "Latitude degrees out of bounds [Expected:-90,90 Value: " +
         String(lat) +
         "]"
     };
   }
   if (lng >= 180 || lng <= -180) {
     return {
-      error:
-        "Longitude degrees out of bounds [Expected:-180,180 Value: " +
+      error: true,
+      error_msg: "Longitude degrees out of bounds [Expected:-180,180 Value: " +
         String(lng) +
         "]"
     };
   }
   //Return coords
   return {
-    y: lat,
-    x: lng,
-    error: null
+    lat: lat,
+    lng: lng,
+    error: false
   };
 }
 /**
@@ -163,32 +222,32 @@ function fromDM(parts) {
   //Validate results
   if (dlat >= 90 || dlat <= -90) {
     return {
-      error:
-        "Latitude degrees out of bounds [Expected:-90,90 Value: " +
-        String(y) +
+      error: true,
+      error_msg: "Latitude degrees out of bounds [Expected:-90,90 Value: " +
+        String(dlat) +
         "]"
     };
   }
   if (dlng >= 180 || dlng <= -180) {
     return {
-      error:
-        "Longitude degrees out of bounds [Expected:-180,180 Value: " +
-        String(x) +
+      error: true,
+      error_msg: "Longitude degrees out of bounds [Expected:-180,180 Value: " +
+        String(dlng) +
         "]"
     };
   }
   if (mlat < 0 || mlat >= 60) {
     return {
-      error:
-        "Latitude minutes out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Latitude minutes out of bounds [Expected:0,60 Value: " +
         String(mlat) +
         "]"
     };
   }
   if (mlng < 0 || mlng >= 60) {
     return {
-      error:
-        "Longitude minutes out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Longitude minutes out of bounds [Expected:0,60 Value: " +
         String(mlng) +
         "]"
     };
@@ -198,9 +257,9 @@ function fromDM(parts) {
   var lat = dlat + (Math.sign(dlat) * mlat) / 60;
   //Return coords
   return {
-    y: lat,
-    x: lng,
-    error: null
+    lat: lat,
+    lng: lng,
+    error: false
   };
 }
 
@@ -236,48 +295,48 @@ function fromDMS(parts) {
   //Validate results
   if (dlat >= 90 || dlat <= -90) {
     return {
-      error:
-        "Latitude degrees out of bounds [Expected:-90,90 Value: " +
+      error: true,
+      error_msg: "Latitude degrees out of bounds [Expected:-90,90 Value: " +
         String(dlat) +
         "]"
     };
   }
   if (dlng >= 180 || dlng <= -180) {
     return {
-      error:
-        "Longitude degrees out of bounds [Expected:-180,180 Value: " +
+      error: true,
+      error_msg: "Longitude degrees out of bounds [Expected:-180,180 Value: " +
         String(dlng) +
         "]"
     };
   }
   if (mlng <= 0 || mlng >= 60) {
     return {
-      error:
-        "Latitude minutes out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Latitude minutes out of bounds [Expected:0,60 Value: " +
         String(mlng) +
         "]"
     };
   }
   if (mlat < 0 || mlat >= 60) {
     return {
-      error:
-        "Longitude minutes out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Longitude minutes out of bounds [Expected:0,60 Value: " +
         String(mlat) +
         "]"
     };
   }
   if (slng < 0 || slng >= 60) {
     return {
-      error:
-        "Latitude seconds out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Latitude seconds out of bounds [Expected:0,60 Value: " +
         String(slng) +
         "]"
     };
   }
   if (slat < 0 || slat >= 60) {
     return {
-      error:
-        "Longitude seconds out of bounds [Expected:0,60 Value: " +
+      error: true,
+      error_msg: "Longitude seconds out of bounds [Expected:0,60 Value: " +
         String(slat) +
         "]"
     };
@@ -287,9 +346,9 @@ function fromDMS(parts) {
   var lat = dlat + (Math.sign(dlat) * mlat) / 60 + (Math.sign(dlat) * slat) / 3600;
   //Return coords
   return {
-    y: lat,
-    x: lng,
-    error: null
+    lat: lat,
+    lng: lng,
+    error: false
   };
 }
 /**
@@ -310,21 +369,22 @@ function fromUTM(parts) {
   //Validate input
   if (zone <= 0 || zone > 60) {
     return {
-      error: "Zone out of bounds [Expected:0,60 Value: " + String(zone) + "]"
+      error: true,
+      error_msg: "Zone out of bounds [Expected:0,60 Value: " + String(zone) + "]"
     };
   }
   if (easting < 100000 || easting > 1000000) {
     return {
-      error:
-        "Easting out of bounds [Expected:100000,999999 Value: " +
+      error: true,
+      error_msg: "Easting out of bounds [Expected:100000,999999 Value: " +
         String(easting) +
         "]"
     };
   }
   if (northing < 0 || northing > 10000000) {
     return {
-      error:
-        "Northing out of bounds [Expected:0,10000000 Value: " +
+      error: true,
+      error_msg: "Northing out of bounds [Expected:0,10000000 Value: " +
         String(northing) +
         "]"
     };
@@ -333,9 +393,9 @@ function fromUTM(parts) {
   var coord = convertUtmToLatLng(easting, northing, zone, hemi);
   //Return coords
   return {
-    y: coord["lat"],
-    x: coord["lng"],
-    error: null
+    lat: coord["lat"],
+    lng: coord["lng"],
+    error: false
   };
 }
 
@@ -363,73 +423,22 @@ function convertUtmToLatLng(
   var eccPrimeSquared = eccSquared / (1 - eccSquared);
 
   M = y / 0.9996;
-  var mu =
-    M /
-    (a *
-      (1 -
-        eccSquared / 4 -
-        (3 * eccSquared * eccSquared) / 64 -
-        (5 * eccSquared * eccSquared * eccSquared) / 256));
-
-  var phi1Rad =
-    mu +
-    ((3 * e1) / 2 - (27 * e1 * e1 * e1) / 32) * Math.sin(2 * mu) +
-    ((21 * e1 * e1) / 16 - (55 * e1 * e1 * e1 * e1) / 32) * Math.sin(4 * mu) +
-    ((151 * e1 * e1 * e1) / 96) * Math.sin(6 * mu);
+  var mu = M / (a * (1 - eccSquared / 4 - (3 * eccSquared * eccSquared) / 64 - (5 * eccSquared * eccSquared * eccSquared) / 256));
+  var phi1Rad = mu + ((3 * e1) / 2 - (27 * e1 * e1 * e1) / 32) * Math.sin(2 * mu) + ((21 * e1 * e1) / 16 - (55 * e1 * e1 * e1 * e1) / 32) * Math.sin(4 * mu) + ((151 * e1 * e1 * e1) / 96) * Math.sin(6 * mu);
   var phi1 = toDegrees(phi1Rad);
-
-  var N1 =
-    a / Math.sqrt(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
+  var N1 = a / Math.sqrt(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
   var T1 = Math.tan(phi1Rad) * Math.tan(phi1Rad);
   var C1 = eccPrimeSquared * Math.cos(phi1Rad) * Math.cos(phi1Rad);
-  var R1 =
-    (a * (1 - eccSquared)) /
-    Math.pow(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad), 1.5);
+  var R1 = (a * (1 - eccSquared)) / Math.pow(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad), 1.5);
   var D = x / (N1 * 0.9996);
-
-  var Lat =
-    phi1Rad -
-    ((N1 * Math.tan(phi1Rad)) / R1) *
-      ((D * D) / 2 -
-        ((5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) *
-          D *
-          D *
-          D *
-          D) /
-          24 +
-        ((61 +
-          90 * T1 +
-          298 * C1 +
-          45 * T1 * T1 -
-          252 * eccPrimeSquared -
-          3 * C1 * C1) *
-          D *
-          D *
-          D *
-          D *
-          D *
-          D) /
-          720);
+  var Lat = phi1Rad - ((N1 * Math.tan(phi1Rad)) / R1) * ((D * D) / 2 - ((5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D) / 24 + ((61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D) / 720);
   Lat = toDegrees(Lat);
-
-  var Long =
-    (D -
-      ((1 + 2 * T1 + C1) * D * D * D) / 6 +
-      ((5 -
-        2 * C1 +
-        28 * T1 -
-        3 * C1 * C1 +
-        8 * eccPrimeSquared +
-        24 * T1 * T1) *
-        D *
-        D *
-        D *
-        D *
-        D) /
-        120) /
-    Math.cos(phi1Rad);
+  var Long = (D - ((1 + 2 * T1 + C1) * D * D * D) / 6 + ((5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1) * D * D * D * D * D) / 120) / Math.cos(phi1Rad);
   Long = LongOrigin + toDegrees(Long);
-  return { lat: Lat, lng: Long };
+  return {
+    lat: Lat,
+    lng: Long
+  };
 }
 
 function toDegrees(rad) {
