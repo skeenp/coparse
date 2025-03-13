@@ -1,4 +1,34 @@
 {
-    "name": "coparse",
-    "version": "1.1.0"
+  "name": "coparse",
+  "version": "2.0.0",
+  "description": "A service for converting coordinates in various formats to a standardized format.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.3",
+    "jest": "^29.7.0",
+    "mgrs": "^2.0.0",
+    "supertest": "^6.3.4",
+    "utm": "^1.1.1"
+  },
+  "engines": {
+    "node": "14.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skeenp/coparse.git"
+  },
+  "keywords": [
+    "coordinate",
+    "parse",
+    "search"
+  ],
+  "author": "Paul Skeen",
+  "bugs": {
+    "url": "https://github.com/skeenp/coparse/issues"
+  },
+  "homepage": "https://github.com/skeenp/coparse#readme"
 }
